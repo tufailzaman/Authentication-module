@@ -36,13 +36,14 @@ exports.postUser = async (req, res, next) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 12);
+        const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 12);
 
         const data = new userModel ({
             firstName : firstName,
             lastName: lastName,
             email: email,
             password: hashedPassword,
-            confirmPassword: hashedPassword
+            confirmPassword: hashedConfirmPassword
 
         })
         const dsave = await data.save();

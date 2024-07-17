@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const routes = require('./routes/user');
 const {config} = require('dotenv');
 config();
 
@@ -10,6 +11,7 @@ const mongodb_url = process.env.mongodb_url;
 app.use(express.json());
 app.use(bodyParser.urlencoded({extended : false}));
 
+app.use(routes);
 
 mongoose.connect(mongodb_url)
 .then(() => {

@@ -71,7 +71,7 @@ exports.verifyUser = async (req, res, next) => {
 
     const user = await userModel.findOne({email : email});
     if(!user || user.verificationCode != code) {
-      return  res.status(400).send("Verification code is invalid ")
+      return  res.status(400).send("Verification code is invalid ");
     }
     user.isVerified = true;
     user.verificationCode = "";
@@ -159,4 +159,97 @@ exports.verifyUser = async (req, res, next) => {
         message: "error in verifying email"
     })
    }
+};
+
+exports.reset = async (req, res, next) => {
+    try{
+        const email  = req.body.email;
+        const user = await userModel.findOne({email: email});
+        if(!user) {
+            return res.status(400).send(`This Email, ${email} does not exist`);
+        }
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        user.verificationCode = verificationCode;
+        user.isVerified = false;
+
+        await user.save();
+        transporter.sendMail({
+            to: email,
+            from: 'tufailzaman789@gmail.com',
+            subject: 'Verification code',
+            html: `<h1>your verification code is ${verificationCode}</h1>`
+        })
+        res.send({
+            sucess: true,
+            error: false,
+            message: "Checck your email"
+        })
+    }
+    catch(error) {
+        res.send({
+            sucess: false,
+            error: true,
+            message: "error happen in sending verificatio code to email"
+        })
+    }
+};
+
+exports.verifyCode = async (req, res, next) => {
+    try{
+        const {email,code} = req.body;
+        const user = await userModel.findOne({email: email});
+        if(!user || user.verificationCode != code){
+            return res.status(400).send("invalid verificatio code. Please try again");
+        } 
+        user.isVerified = true;
+        user.verificationCode = "";
+        await user.save();
+        res.send({
+            sucess: true,
+            error: false,
+            message: "plz gave new password"
+        })
+    }
+    catch (error) {
+        res.send({
+            sucess: false,
+            error: true,
+            message: "error in verifying your code"
+        })
+    }
+};
+
+exports.newPassword = async (req, res, next) => {
+   try{
+    const id = req.params.id;
+    const newPassword = req.body.newPassword;
+    const user = await userModel.findById({_id : id});
+    if(!user) {
+        res.status(400).send("user does not have");
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    user.confirmPassword = hashedPassword;
+    await user.save();
+    transporter.sendMail({
+        to: user.email,
+        from: 'tufailzaman789@gmail.com',
+        subject: 'Password Chenged',
+        html: `${user.firstName} ${user.lastName}, pleaase check your password`
+    });
+    res.send({
+        sucess: true,
+        error: false,
+        message: "password changed"
+    });
+   }
+   catch (error) {
+    res.send({
+        sucess: false,
+        error: true,
+        mmessage: "error happen in storing new password in the database"
+    })
+   }
+    
 };
